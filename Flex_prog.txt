@@ -12,7 +12,7 @@ def print_fig(fig_name, x_chi, H1, H2):
     point = cross.cross_point(x_chi, H1, H2)
     if point:
         plt.plot(point[0], point[1], c = 'g', marker = 'o', ms=5)
-    plt.legend(loc='best')
+    plt.legend(frameon=False, fontsize=10)
     plt.draw()
     plt.savefig(fig_name, dpi=300)
 
