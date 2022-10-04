@@ -58,12 +58,12 @@ class Flex_api:
 flex = Flex_api(N1, sigma1, p1, chi1, N2, sigma2, p2, chi2)  #Here we set and change the variables
 flex.swpro = 0
 with open("Chi_data_result.txt", "w") as file:
-    for n in []: #Enter your own N2 values
+    for n in []: #Enter your N2 values
         flex.N2 = n
         H1 = []
         H2 = []
         x_chi = []
-        for chi in np.arange(): #Enter your own chi range and step
+        for chi in np.arange(): #Enter your chi range and step values
             flex.chi2 = chi
             flex.print_input()
             os.system(r'.\flex.exe')
