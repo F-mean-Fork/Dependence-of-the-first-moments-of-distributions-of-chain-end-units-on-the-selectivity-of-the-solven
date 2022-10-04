@@ -15,6 +15,7 @@ def print_fig(fig_name, x_chi, H1, H2):
     plt.legend(frameon=False, fontsize=10)
     plt.draw()
     plt.savefig(fig_name, dpi=300)
+    plt.clf()
 
 class Flex_api:
     def __init__(self, N1, sigma1, p1, chi1, N2, sigma2, p2, chi2):
@@ -73,5 +74,4 @@ with open("Chi_data_result.txt", "w") as file:
             x_chi.append(chi)
         ans = cross.cross_point(x_chi, H1, H2)
         file.write(f'{flex.N2}   {flex.sigma1}   {ans[0]}   {ans[1]} \n') 
-
-print_fig(f'N2={flex.N2}, sigma = {flex.sigma1}.jpg', x_chi, H1, H2)
+        print_fig(f'N2={flex.N2}, sigma = {flex.sigma1}.jpg', x_chi, H1, H2)
