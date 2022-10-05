@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
-import Cross_point_ver2 as cross
+import Cross_point as cross
 
 def print_fig(fig_name, x_chi, H1, H2):
     plt.plot(x_chi, H1, color = 'black', label = 'Chain A')
