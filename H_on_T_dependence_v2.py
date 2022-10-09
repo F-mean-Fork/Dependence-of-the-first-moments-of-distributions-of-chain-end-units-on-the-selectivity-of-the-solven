@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
-import Cross_point_ver2 as cross
+import Cross_point as cross
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
