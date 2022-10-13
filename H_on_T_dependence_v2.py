@@ -101,9 +101,12 @@ with open("Data_result.txt", "a") as file:
             x_T.append(T[0])
             print(T[0], t1, t2, flex.chi1, flex.chi2)    
         ans = cross.cross_point(x_T, H1, H2)
-        diff_H = [(i - j)/ans[1] for i, j in zip(H1, H2)]
-        diff_H = np.gradient(diff_H)/np.gradient(x_T)
-        dHdT = interpolate.InterpolatedUnivariateSpline(x_T, diff_H)(ans[0])
+        if ans:
+            diff_H = [(i - j)/ans[1] for i, j in zip(H1, H2)]
+            diff_H = np.gradient(diff_H)/np.gradient(x_T)
+            dHdT = interpolate.InterpolatedUnivariateSpline(x_T, diff_H)(ans[0])
+        else:
+            dHdT = 0.0
         #plt.plot(x_T, diff_H)
         #plt.plot(ans[0],dHdT), 'o')
         #plt.show()
