@@ -1,9 +1,9 @@
-from gettext import npgettext
 import os
 import shutil
 import numpy as np
 import subprocess
 import matplotlib.pyplot as plt
+import operator
 
 class Flex_api:
 	def __init__(self, N1, sigma1, p1, chi1, N2, sigma2, p2, chi2):
@@ -20,6 +20,9 @@ class Flex_api:
 		self.ksi = 0.1                      #step size of gradient descent
 		self.nfree = 5000                   #number of "free steps" at descent
 		self.swpro = 1                      #if swpro=0: switch off print of profile
+		self.H1 = None                      #first moment of chain A
+		self.H2 = None                      #first moment of chain B      
+		self.F = None                       #free energy of the system
         
 	def print_input(self):
 		with open('INPUT.txt', 'w') as f:
@@ -36,8 +39,9 @@ class Flex_api:
 			f.write(f'{self.ksi} \n')
 			f.write(f'{self.nfree} \n')
 			f.write(f'{self.swpro} \n')
-    
-	def check_infor(self):
+   
+	@staticmethod
+	def check_infor():
 		try:
 			path = str(os.system('pwd'))
 			if os.name == 'nt':
@@ -56,27 +60,35 @@ class Flex_api:
 			with open('data.out', 'r') as data:
 				data.readline()
 				st = list(map(float, data.readline().split()))
-				H1 = st[0]
-				H2 = st[1]
-				F = st[2]
-			return H1, H2
+				self.H1 = st[0]
+				self.H2 = st[1]
+				self.F = st[2]
 		except:
-			return None
+			self.H1 = None                     
+			self.H2 = None                       
+			self.F = None 
 
-	def run_flex(self, timeout):
+	@staticmethod
+	def run_flex(timeout):
 		if os.name == 'nt':
 			command = r'.\flex.exe'
 		else:
 			command = r'./flex.exe'
 		try:
 			proc = subprocess.run(command, timeout=timeout, check=True, stdout=subprocess.PIPE, encoding='utf-8')
-			print(proc.stdout) 
+			print(proc.stdout)
 		except:
 			return False
 		return True
 	
-	def load_flex(self):                  #For Windows OS
-		dir_name = 'Flex_2_2\\Source'
+	@staticmethod
+	def load_flex():
+		if os.name == 'nt':
+			dir_name = r'Flex_2_2\Source'
+			path = r'Flex_2_2\flex.exe'
+		else:
+			dir_name = 'Flex_2_2/Source'
+			path = 'Flex_2_2/flex.exe'
 		try:
 			shutil.rmtree('Flex_2_2')
 		except:
@@ -86,60 +98,52 @@ class Flex_api:
 		os.system('make')
 		os.chdir('..')
 		os.chdir('..')
-		shutil.copy('Flex_2_2\\flex.exe','flex.exe')
+		shutil.copy(path,'flex.exe')
 
-	def clear(self):
-		for file in ['data.out', 'INFOR.info','INPUT.txt']:
+	@staticmethod
+	def clear():
+		for file in ['data.out', 'INFOR.info','INPUT.txt', 'profiles.out']:
 			try:
 				os.remove(file)
 			except:
 				pass
-
-	def clear_initial_guess(self):
+						
+	@staticmethod
+	def clear_initial_guess():
 		try:
 			os.remove('initial_guess.in')
 		except:
 			pass
 
-def run_on_chi(point, chi2, H1, H2, timeout = 300):
-	point.chi2 = chi2
-	point.clear()
-	point.print_input()
-	if point.run_flex(timeout):
-		t1, t2 = point.read_data()
-		H1.append(t1)
-		H2.append(t2)
-		return True
-	else:
-		return False
-
-if __name__ == '__main__':
-	EPS = 1e-4
-	point = Flex_api(100, 0.05, 1.0, 0.0, 150, 0.05, 1.0, 0.25)
-	point.load_flex()
-	H1, H2 = list(), list() 
-	point.clear_initial_guess()
-	chi = [0.0]
-	chi2_delta = 0.2
-	while chi2_delta > EPS:
-		if run_on_chi(point, chi[-1], H1, H2):
-			print(H1[-1], H2[-1])
-		else:
-			break
-		if H2[-1] <= H1[-1]:
-			chi2_delta = chi2_delta*0.5
-			chi.append(chi[-2]+chi2_delta)
-		else:
-			chi.append(chi[-1]+chi2_delta)
-	chi.pop(-1)
-	index = sorted(range(len(chi)), key=lambda k: chi[k])
-	chi = np.array(chi)
-	H1 = np.array(H1)
-	H2 = np.array(H2)
-	H1 = H1[index]
-	H2 = H2[index]
-		
-	plt.plot(chi, H1, color = 'b')
-	plt.plot(chi, H2, color = 'r')
-	plt.show()
-	
+	def profiles(self):
+		try:
+			with open('profiles.out', 'r') as f:
+				f.readline()
+				profile = []
+				for line in f.readlines():
+					profile.append(list(map(float, line.split())))
+			profile = np.array(profile)
+			z = profile[:, 0]; phi1 = profile[:, 1]; phi2 = profile[:, 2]; n1 = profile[:, 3]; n2 = profile[:, 4] 
+			x_lim = max(self.H1, self.H2) * 2
+			y_lim = max(max(phi1), max(phi2)) * 1.05
+			plt.xlim(0., x_lim)
+			plt.ylim(0., y_lim)
+			plt.xlabel(r'$z$', size=16)
+			plt.ylabel(r'$\varphi(z)$', size=16)
+			plt.plot(z, phi1, color='black', label='Chain A')
+			plt.plot(z, phi2, color='red', label='Chain B')
+			plt.legend()
+			plt.savefig(f'phi, sigma2={self.sigma2}, p2={self.p2}.jpg', dpi=300)
+			plt.close()
+			y_lim = max(max(n1), max(n2)) * 1.05
+			plt.xlim(0., x_lim)
+			plt.ylim(0., y_lim)
+			plt.xlabel(r'$z$', size=16)
+			plt.ylabel(r'$n(z)$', size=16)
+			plt.plot(z, n1, color='black', label='Chain A')
+			plt.plot(z, n2, color='red', label='Chain B')
+			plt.legend()
+			plt.savefig(f'n, sigma2={self.sigma2}, p2={self.p2}.jpg', dpi=300)
+			plt.close()
+		except IOError as err:
+			print(err)
